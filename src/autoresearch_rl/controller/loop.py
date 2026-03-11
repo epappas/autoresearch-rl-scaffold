@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from autoresearch_rl.sandbox.runner import run_trial
+from autoresearch_rl.eval.metrics import parse_metrics
 from autoresearch_rl.telemetry.events import emit
 from autoresearch_rl.telemetry.manifest import write_manifest
 
@@ -13,23 +14,14 @@ class LoopResult:
     iterations: int
 
 
-def _extract_val_bpb(stdout: str) -> float:
-    for line in stdout.splitlines():
-        if "val_bpb=" in line:
-            try:
-                return float(line.split("val_bpb=")[-1].strip())
-            except ValueError:
-                pass
-    return 999.0
-
-
 def run_loop(max_iterations: int = 1, trace_path: str = "traces/events.jsonl", artifacts_dir: str = "artifacts/runs") -> LoopResult:
     """Minimal orchestration loop with telemetry + manifest output."""
     best = float("inf")
     for i in range(max_iterations):
         diff = "diff --git a/train.py b/train.py\n+ # candidate change"
         trial = run_trial(diff=diff, timeout_s=30)
-        score = _extract_val_bpb(trial.stdout)
+        parsed = parse_metrics(trial.stdout)
+        score = parsed.val_bpb if parsed.val_bpb is not None else 999.0
         best = min(best, score)
         event = {
             "type": "trial_completed",
