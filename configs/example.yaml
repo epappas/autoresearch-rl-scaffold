@@ -1,0 +1,22 @@
+experiment:
+  name: nanochat-v0
+  max_wall_seconds: 300
+  target_files:
+    - train.py
+  objective: val_bpb
+sandbox:
+  allow_network: false
+  max_memory_gb: 32
+  max_cpu_cores: 16
+controller:
+  max_iterations: 100
+  history_window: 32
+telemetry:
+  trace_path: traces/events.jsonl
+policy:
+  provider: "stub"
+  temperature: 0.4
+eval:
+  early_stop:
+    enabled: true
+    check_every_seconds: 30
